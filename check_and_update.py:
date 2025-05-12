@@ -1,0 +1,32 @@
+import os
+import re
+import argparse
+from utils import generate_guard_name, update_file
+
+def check_and_update_file(file_path, dry_run):
+    with open(file_path, 'r') as f:
+        content = f.read()
+
+    guard_name = generate_guard_name(file_path)
+    if f"#ifndef {guard_name}" not in content:
+        if not dry_run:
+            update_file(file_path, guard_name)
+            print(f"Updated {file_path}")
+        else:
+            print(f"Dry-run: {file_path} would be updated.")
+
+def search_files(directory, dry_run):
+    for dirpath, dirnames, filenames in os.walk(directory):
+        for filename in filenames:
+            if filename.endswith(('.h', '.cpp', '.c', '.hpp')):
+                file_path = os.path.join(dirpath, filename)
+                check_and_update_file(file_path, dry_run)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Check and update header files with #ifndef guards.")
+    parser.add_argument('directory', nargs='?', default=os.getcwd(), help="Directory to scan (default: current directory)")
+    parser.add_argument('--dry-run', action='store_true', help="Only check, do not update files.")
+    
+    args = parser.parse_args()
+
+    search_files(args.directory, args.dry_run)
